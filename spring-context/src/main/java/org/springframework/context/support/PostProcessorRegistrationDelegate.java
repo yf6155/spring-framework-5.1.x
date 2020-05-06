@@ -79,11 +79,22 @@ final class PostProcessorRegistrationDelegate {
 			// uninitialized to let the bean factory post-processors apply to them!
 			// Separate between BeanDefinitionRegistryPostProcessors that implement
 			// PriorityOrdered, Ordered, and the rest.
+			// currentRegistryProcessors存放的是实现BeanDefinitionRegistryPostProcessor接口，Spring内部的对象
 			List<BeanDefinitionRegistryPostProcessor> currentRegistryProcessors = new ArrayList<>();
 
 			// First, invoke the BeanDefinitionRegistryPostProcessors that implement PriorityOrdered.
+			// BeanDefinitionRegistryPostProcessor 等于 BeanFactoryPostProcessor
 			String[] postProcessorNames =
 					beanFactory.getBeanNamesForType(BeanDefinitionRegistryPostProcessor.class, true, false);
+			// 这个地方可以得到一个BeanFactoryPostProcessor，因为是Spring默认在最开始自己注册的
+			// 为什么要在最开始注册这个呢？
+			// 因为Spring的工程需要去解析去扫描等等功能
+			// 而这些功能都是需要再Spring工程初始化完成之前执行
+			// 要么再工程最开始的时候，要么在工厂初始化之中，反正不能在之后
+			//因为如果在之后就没有意义，因为那个时候已经需要使用工程了
+			// 所以Spring在一开始就注册了一个BeanFactoryPostProcessor，用来查收SpringFactory的实例化过程
+			// 在这个地方断点可以知道这个类叫做ConfigurationClassPostProcessor
+			// 这个ConfigurationClassPostProcessor类可以查收Spring工厂的实例化过程
 			for (String ppName : postProcessorNames) {
 				if (beanFactory.isTypeMatch(ppName, PriorityOrdered.class)) {
 					currentRegistryProcessors.add(beanFactory.getBean(ppName, BeanDefinitionRegistryPostProcessor.class));

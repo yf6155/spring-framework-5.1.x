@@ -112,9 +112,12 @@ abstract class ConfigurationClassUtils {
 			}
 		}
 
+		// 判断当前这个bd中存在的类是不是加了@Configuration注解
 		if (isFullConfigurationCandidate(metadata)) {
+			// 如果存在Configuraiton注解，则为BeanDefinition 设置configurationClass属性为full
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_FULL);
 		}
+		// 判断是否加了以下注解，摘录isLiteCOnfigurationCandidate的源码
 		else if (isLiteConfigurationCandidate(metadata)) {
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_LITE);
 		}

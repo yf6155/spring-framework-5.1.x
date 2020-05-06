@@ -18,6 +18,9 @@ public class SpringAppDemo {
 
 	public static void main(String[] args) {
 		AnnotationConfigApplicationContext annotationConfigApplicationContext = new AnnotationConfigApplicationContext(AppConfig.class);
+
+		//annotationConfigApplicationContext.addBeanFactoryPostProcessor(new 自定义的BeanFactoryProcessor());
+
 		IndexDao dao = annotationConfigApplicationContext.getBean(IndexDao.class);
 		dao.query();
 	}
