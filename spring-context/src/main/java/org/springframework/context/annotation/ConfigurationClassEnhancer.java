@@ -74,7 +74,10 @@ class ConfigurationClassEnhancer {
 
 	// The callbacks to use. Note that these callbacks must be stateless.
 	private static final Callback[] CALLBACKS = new Callback[] {
+			// 增强方法，主要控制bean的作用域，即不每一次都去调用new创建实例
 			new BeanMethodInterceptor(),
+
+			//设置一个beanFactory
 			new BeanFactoryAwareMethodInterceptor(),
 			NoOp.INSTANCE
 	};
@@ -107,7 +110,7 @@ class ConfigurationClassEnhancer {
 			return configClass;
 		}
 
-		// CGLIB代理
+		// 没有被代理，CGLIB代理
 		Class<?> enhancedClass = createClass(newEnhancer(configClass, classLoader));
 		if (logger.isTraceEnabled()) {
 			logger.trace(String.format("Successfully enhanced %s; enhanced class name is: %s",
@@ -361,6 +364,9 @@ class ConfigurationClassEnhancer {
 				}
 			}
 
+			// 一个非常难牛逼的判断
+			// 判断到底是new还是get
+			// 判断执行的方法和调用的方法是不是同一个方法
 			if (isCurrentlyInvokedFactoryMethod(beanMethod)) {
 				// The factory is calling the bean method in order to instantiate and register the bean
 				// (i.e. via a getBean() call) -> invoke the super implementation of the method to actually

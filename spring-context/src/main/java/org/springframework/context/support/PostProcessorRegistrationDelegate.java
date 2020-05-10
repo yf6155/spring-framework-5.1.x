@@ -67,6 +67,7 @@ final class PostProcessorRegistrationDelegate {
 			// 存放程序员添加的BeanDefinitionRegistryPostProcessor
 			List<BeanDefinitionRegistryPostProcessor> registryProcessors = new ArrayList<>();
 
+			// 自定义的beanFactoryPostProcessors
 			for (BeanFactoryPostProcessor postProcessor : beanFactoryPostProcessors) {
 				if (postProcessor instanceof BeanDefinitionRegistryPostProcessor) {
 					BeanDefinitionRegistryPostProcessor registryProcessor =
@@ -75,6 +76,7 @@ final class PostProcessorRegistrationDelegate {
 					registryProcessors.add(registryProcessor);
 				}
 				else {
+					// BeanDefinitionRegistryPostProcessor   BeanFactoryPostProcessor
 					regularPostProcessors.add(postProcessor);
 				}
 			}
@@ -157,6 +159,8 @@ final class PostProcessorRegistrationDelegate {
 			// 执行BeanFactoryPostProcessor的回调，前面执行的是BeanFactoryPostProcessor的子类BeanDefinitionRegistryPostProcessor的回调
 			// 这里执行的是BeanFactoryPostProcessor
 			invokeBeanFactoryPostProcessors(registryProcessors, beanFactory);
+
+			// 自定义的BeanFactoryPostProcessor
 			invokeBeanFactoryPostProcessors(regularPostProcessors, beanFactory);
 		}
 
