@@ -106,6 +106,8 @@ class ConfigurationClassEnhancer {
 			}
 			return configClass;
 		}
+
+		// CGLIB代理
 		Class<?> enhancedClass = createClass(newEnhancer(configClass, classLoader));
 		if (logger.isTraceEnabled()) {
 			logger.trace(String.format("Successfully enhanced %s; enhanced class name is: %s",
@@ -119,10 +121,22 @@ class ConfigurationClassEnhancer {
 	 */
 	private Enhancer newEnhancer(Class<?> configSuperClass, @Nullable ClassLoader classLoader) {
 		Enhancer enhancer = new Enhancer();
+
+		// 增强父类，cglib是基于继承来的
 		enhancer.setSuperclass(configSuperClass);
+
+		//增强接口
+		// 便于判断，表示一个类以及被增强了
 		enhancer.setInterfaces(new Class<?>[] {EnhancedConfiguration.class});
 		enhancer.setUseFactory(false);
 		enhancer.setNamingPolicy(SpringNamingPolicy.INSTANCE);
+
+		// BeanFactoryAwareGeneratorStrategy是一个生成策略
+		// 主要为生成的CGLIB类中添加成员变量$$beanFactory
+		// 同时基于接口EnhancedConfiguration的父接口BeanFactoryAware中的setBeanFactory方法
+		// 设置此变量的值为当前Context中的beanFactory,如果一来我们这个cglib代理对象就有了beanFactory
+		// 有了factory就能获得对象，而不用去通过方法获得对象了，因为通过方法获得对象不能控制其过程
+		// 该BeanFactory的作用是在this调用时拦截该调用，并直接在beanFactory中获得目标bean
 		enhancer.setStrategy(new BeanFactoryAwareGeneratorStrategy(classLoader));
 		enhancer.setCallbackFilter(CALLBACK_FILTER);
 		enhancer.setCallbackTypes(CALLBACK_FILTER.getCallbackTypes());
@@ -315,7 +329,8 @@ class ConfigurationClassEnhancer {
 		@Nullable
 		public Object intercept(Object enhancedConfigInstance, Method beanMethod, Object[] beanMethodArgs,
 					MethodProxy cglibMethodProxy) throws Throwable {
-
+			// enhancedConfigInstance代理
+			// 通过enhancedConfigInstance中cglib生成的成员变量$$beanFactory获得beanFactory
 			ConfigurableBeanFactory beanFactory = getBeanFactory(enhancedConfigInstance);
 			String beanName = BeanAnnotationHelper.determineBeanNameFor(beanMethod);
 

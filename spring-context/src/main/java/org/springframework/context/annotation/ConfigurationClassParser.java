@@ -298,7 +298,35 @@ class ConfigurationClassParser {
 			}
 		}
 
+		/**
+		 * 上面的代码就是扫描普通类  -- @Component
+		 * 并且放到map中
+		 */
+
 		// Process any @Import annotations
+		// 处理@Import 3 种情况
+		// ImportSelector
+		// 普通类
+		// ImportBeanDefinitionRegistrar
+
+		/**
+		 * 这里处理的Import是需要判断我们的类当中是否有@Import注解
+		 * 如果有则把@Import当中的值拿出来，是一个类
+		 * 比如@Import(XXXX.class)，那么这里便把XXXX传进去进行解析
+		 * 在解析的过程中如果发觉是一个ImportSelector那么就回调selector的方法
+		 * 返回一个字符串（类名），通过这个字符串得到一个类
+		 * 继而在递归调用本方法来处理这个类
+		 *
+		 *
+		 * 判断一组类是不是Imports(3种import)
+		 *
+		 *
+		 * 因为selector返回的那个类，严格意义上来讲不符合@Import(XXXX.class)，因为这个类没有被直接Import
+		 * 如果不符合，就不会调用这个方法getImports(sourceClass)，就是得到所有的Import类
+		 * 但是注意的是递归当中没有getImports(sourceClass)的，意思是直接把selector当中返回的类直接当成一个import的类去解析
+		 * 总之就是一句话，@Import(XXXX.class)，那么XXXX这个类就会被解析
+		 * 如果XXXX是selector的那么它当中返回的类虽然没有直接加上@Import，但是也会被解析
+		 */
 		processImports(configClass, sourceClass, getImports(sourceClass), true);
 
 		// Process any @ImportResource annotations
@@ -553,9 +581,13 @@ class ConfigurationClassParser {
 			this.importStack.push(configClass);
 			try {
 				for (SourceClass candidate : importCandidates) {
+
+					// ImportSelector
 					if (candidate.isAssignable(ImportSelector.class)) {
 						// Candidate class is an ImportSelector -> delegate to it to determine imports
 						Class<?> candidateClass = candidate.loadClass();
+
+						// 反射实现一个对象
 						ImportSelector selector = BeanUtils.instantiateClass(candidateClass, ImportSelector.class);
 						ParserStrategyUtils.invokeAwareMethods(
 								selector, this.environment, this.resourceLoader, this.registry);
@@ -563,11 +595,17 @@ class ConfigurationClassParser {
 							this.deferredImportSelectorHandler.handle(configClass, (DeferredImportSelector) selector);
 						}
 						else {
+							// 回调
 							String[] importClassNames = selector.selectImports(currentSourceClass.getMetadata());
 							Collection<SourceClass> importSourceClasses = asSourceClasses(importClassNames);
+
+							// 递归，这里第二次调用processImports
+							// 如果是一个普通类，会进else
 							processImports(configClass, currentSourceClass, importSourceClasses, false);
 						}
 					}
+
+					// ImportBeanDefinitionRegistrar
 					else if (candidate.isAssignable(ImportBeanDefinitionRegistrar.class)) {
 						// Candidate class is an ImportBeanDefinitionRegistrar ->
 						// delegate to it to register additional bean definitions
@@ -581,6 +619,15 @@ class ConfigurationClassParser {
 					else {
 						// Candidate class not an ImportSelector or ImportBeanDefinitionRegistrar ->
 						// process it as an @Configuration class
+
+						/**
+						 * 否则，加入到importStack后调用processConfigurationClass进行处理
+						 * processConfigurationClass里面主要就是把类放到configurationClasses
+						 * configurationClasses是一个集合，会在后面拿出来解析成bd继而注册
+						 * 可以看到普通类在扫描出来的时候就被注册了
+						 * 如果是importSelector，会先放到configurationClasses后面进行出来注册
+						 */
+
 						this.importStack.registerImport(
 								currentSourceClass.getMetadata(), candidate.getMetadata().getClassName());
 						processConfigurationClass(candidate.asConfigClass(configClass));

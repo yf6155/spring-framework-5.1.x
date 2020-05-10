@@ -76,6 +76,13 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 		 * 什么是Bean定义？BeanDefinition
 		 */
 		this.reader = new AnnotatedBeanDefinitionReader(this);
+
+		/**
+		 * 可以用来扫描包或者类，继而转换成bd
+		 * 但是实际上我们扫描包功能不是scanner这个对象
+		 * 是Spring自己new的一个ClassPathBeanDefinitionScanner
+		 * 这里的scanner仅仅是为了程序员能够在外部调用AnnotationConfigApplicationContext对象的scan方法
+		 */
 		this.scanner = new ClassPathBeanDefinitionScanner(this);
 	}
 
